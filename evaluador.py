@@ -109,9 +109,10 @@ def analizar(jugador: list[list[tuple[int,str]], list[tuple[int,str]], list[tupl
     Funcion que envia  las cartas a reporte() para luego evaluar resultados
     
     '''
+
     cartas = jugador[0]
-    libres = []
-    libres.extend(cartas)
+    libres = jugador[2].copy()
+    # libres.extend(cartas)
     
     # Hacer reporte
     repeticiones, palos = reporte(cartas)
@@ -121,17 +122,12 @@ def analizar(jugador: list[list[tuple[int,str]], list[tuple[int,str]], list[tupl
         
         # Si el numero "repeticion" se repite 3 o mas veces Buscar las cartas y sumarlas a juego para luego sumarlas a juegos
         if repeticiones[repeticion] >= 3:
-            print(f"repeticiones[repeticion]: {repeticiones[repeticion]}") #!!!!!!!!!!!!
             # Recorrer mano y sumar todas las cartas de valor 3 a una juego
             juego = []
-            print(f"antes de entrar al for carta...Jugador[0]: {jugador[0]}") #!!!!!!!!!!!!
             
             pierna = [carta for carta in jugador[0] if carta[0] == repeticion]
-            print (f"pierna: {pierna}") #!!!!!!!!!!!!
-            print (f"Mano: {jugador[0]}") #!!!!!!!!!!!!
             
             for carta in pierna:
-                print(f"Dentro del for carta - carta: {carta}") #!!!!!!!!!!!!
                 # if carta[0] == repeticion:
                 #     juego.append(carta)
                 # else:
@@ -141,34 +137,29 @@ def analizar(jugador: list[list[tuple[int,str]], list[tuple[int,str]], list[tupl
                 juego.append(carta) 
                 
                 # Borra la carta de la pila de "libres" 
-                print (f"Mano ANTES DE BORRAR CARTA DE LIBRES: {jugador[0]}") #!!!!!!!!!!!!
                 try:
                     libres.remove(carta)
                 except ValueError:
                     pass
                 
-                print("libres despuues de borrar la carta",libres) #!!!!!!!!!!!!
-                print (f"Mano: {jugador[0]}\n") #!!!!!!!!!!!!
-                
             jugador[1].append(juego)
-            # jugador[2] = libres
-            # jugador[2] = []
-            # jugador[2].extend(libres)
-    print(f" \nFIN de for analizar PIERNA\nLibres: {jugador[2]}") #!!!!!!!!!!!!
+
             
     
     # ANALIZAR ESCALERAS con palos
     escalera, cartas_escalera = hay_escalera(palos)
-    print(f"Hay escalera: {escalera}\nEscaleras: {cartas_escalera}")
     
     if escalera:
-        # Agregar Cartas escalera a posibles juegos (jugador[1])
-        # jugador[1].append(cartas_escalera)
-        
+        print(f"Cartas_escalera: {cartas_escalera}")
         # Sacando Cartas escaleras de cartas libres
         for palo in cartas_escalera:
             juego = []
             for numero in cartas_escalera[palo]:
+                
+                # Eliminando el 1 si es del mismo palo que anterior
+                if palo[-1:] == "1":
+                    palo = palo[:-1]
+                    
                 carta = (numero, palo)
 
                 # # Saca de libres la carta que forma escalera
@@ -180,11 +171,10 @@ def analizar(jugador: list[list[tuple[int,str]], list[tuple[int,str]], list[tupl
                 # Agregar carta al juego para luego sumarlo a posibles juegos
                 juego.append(carta)
                 
+            # Agregar Cartas escalera a posibles juegos (jugador[1])
             jugador[1].append(juego)
             
-    jugador[2] = []
-    jugador[2].extend(libres)
+    jugador[2] = libres.copy()
     
-    print(f" \nDESPUES if escalera\nLibres: {jugador[2]}") #!!!!!!!!!!!!
                 
     return jugador

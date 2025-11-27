@@ -1,45 +1,20 @@
-from deck import *
-from players import *
+
+from game_init import inicializar
 from system import *
 from evaluador import *
 
-mazo = crear_mazo()
-
-mezclar_mazo(mazo)
-# print (f"Mazo: {mazo}\n")
+jugadores, mazo, descarte = inicializar()
 
 
-# iniciar jugadores
-jugadores = iniciar_jugadores(2)
 
-mazo = crear_mazo()
+# 1 pierna de unos + 1 escalera de basto (7,8,9). Libre 11 de espadas
+# jugadores["Jugador_1"] = [[(7, 'basto'), (1, 'copa'), (1, 'oro'), (8, 'basto'), (9, 'basto'), (1, 'espada'), (11, 'espada')], [], [(7, 'basto'), (1, 'copa'), (1, 'oro'), (8, 'basto'), (9, 'basto'), (1, 'espada'), (11, 'espada')], 0, True] 
 
-mezclar_mazo(mazo)
-# print (f"Mazo: {mazo}\n")
+# 1 escalera de copas(1,2,3) + 1 escalera de basto (7,8,9). Libre 11 de espadas
+# jugadores["Jugador_1"] = [[(7, 'basto'), (1, 'copa'), (2, 'copa'), (8, 'basto'), (9, 'basto'), (3, 'copa'), (11, 'espada')], [], [(7, 'basto'), (1, 'copa'), (2, 'copa'), (8, 'basto'), (9, 'basto'), (3, 'copa'), (11, 'espada')], 0, True]
 
-# repartir_cartas(jugadores,mazo,descarte=[])
-# mostrar_cartas(jugadores)
-
-# descarte = iniciar_descarte(mazo)
-# print("Descarte: ", descarte)
-
-# print (f"Mazo: {mazo}\n")
-
-
-# devolver_cartas(mazo, jugadores)
-# print("cartas devueltas")
-
-# mostrar_cartas(jugadores)
-
-# EVALUAR
-# print()
-# print('*' * 30)
-# print('       SIGUIENTE TURNO')
-# print('*' * 30)
-
-# jugadores["Jugador_1"] = [[(7, 'basto'), (1, 'copa'), (1, 'oro'), (8, 'basto'), (9, 'basto'), (1, 'espada'), (11, 'espada')], [], [], 0, True]
-# jugadores["Jugador_1"] = [[(7, 'basto'), (1, 'copa'), (2, 'copa'), (8, 'basto'), (9, 'basto'), (3, 'copa'), (11, 'espada')], [], [], 0, True]
-jugadores["Jugador_1"] = [[(7, 'basto'), (1, 'basto'), (2, 'basto'), (8, 'basto'), (9, 'basto'), (3, 'basto'), (11, 'espada')], [], [], 0, True]
+# 2 escalera de basto(1,2,3) y (7,8,9). Libre 11 de espadas
+jugadores["Jugador_1"] = [[(7, 'basto'), (1, 'basto'), (2, 'basto'), (8, 'basto'), (9, 'basto'), (3, 'basto'), (11, 'espada')], [], [(7, 'basto'), (1, 'basto'), (2, 'basto'), (8, 'basto'), (9, 'basto'), (3, 'basto'), (11, 'espada')], 0, True]
 
 # ANALIZAR CARTAS
 jugadores["Jugador_1"] = analizar(jugador = jugadores["Jugador_1"])

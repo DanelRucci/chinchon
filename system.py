@@ -38,8 +38,13 @@ def repartir_cartas(
             carta = robar_carta_mazo(mazo)
             
             # Jugador recibe la carta
+            # Se agrega a la mano
             jugadores[jugador][0].append(carta)
         
+            # Se agrega a libres
+            jugadores[jugador][2].append(carta)
+
+
 def mostrar_encabezado_turno():
     print()
     print('*' * 30)
