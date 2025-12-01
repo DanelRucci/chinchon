@@ -63,14 +63,22 @@ def mostrar_cartas_mano(nombre_jugador:str, datos_jugador: list[list[tuple[int,s
     
         
 # ---------------------
-# devolver_cartas()
+# reiniciar_jugadores()
 # ---------------------
-def devolver_cartas(jugadores):
-    for jugador in jugadores:
+def reiniciar_jugadores(jugadores):
+    '''
+    Funcion que reinicia jugadores:
+        . pone en 0 la listas de mano, posibles juegos y libbres
+        . borra jugadores que perdierion (condicion False)
+    '''
+    for jugador in list(jugadores.keys()):
         if jugadores[jugador][4]: # SI el jugador está habilitado para seguir jugando
             jugadores[jugador][0] = []
             jugadores[jugador][1] = []
             jugadores[jugador][2] = []
+        else:
+            # Si no está habilitado borrarlo
+            jugadores.pop(jugador)
     
 
 # ---------------------
@@ -139,6 +147,9 @@ def descartar(carta, descarte, jugador, jugadores):
     
     # Agregar carta a la pila de descarte
     descarte.append(carta)
+    
+
+        
         
             
     

@@ -277,6 +277,9 @@ def comienzo_juego(
             
             break
         
+        # Quitar Juggadores que perdieron
+        # quitar_jugadores(jugadores)
+        
         # Pregunta si quiere seguir con la siguiente ronda
         seguir = input("Para seguir con la siguiente ronda pulsar enter(ingresa x para salir): ")
         if seguir.upper() == 'X':
@@ -285,11 +288,10 @@ def comienzo_juego(
         
         borrar_pantalla()
         
-        # PONER EN 0 LAS MANOS DE LOS JUGADORES HABILITADOS PARA SEGUIR
-        devolver_cartas(jugadores)
+        # PONER EN 0 LAS MANOS DE LOS JUGADORES HABILITADOS PARA SEGUIR Y BORRAR LOS INHABILITADOS
+        reiniciar_jugadores(jugadores)    
         
         # Volver a mezclar y dar cartas entre los JUGADORES HABILITADOS
-        print("Cuando CORTEN no tendrían que verse este mensaje que sale antes de barajar_y_dar()")
         mazo, descarte = barajar_y_dar(jugadores)
                 
     # FIN DEL JUEGO
