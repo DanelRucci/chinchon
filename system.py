@@ -107,7 +107,10 @@ def contar_jugadores_ok(jugadores) -> list[str]:
     Entra: jugadores
     '''
     jugadores_ok = []
-    return [jugadores_ok.append(jugador) for jugador in jugadores if jugadores[jugador][4]]
+    for jugador in jugadores:
+        if jugadores[jugador][4]:
+            jugadores_ok.append(jugador)
+    return jugadores_ok
     
 
      
@@ -199,10 +202,10 @@ def comienzo_juego(
     print("\n***********************************************")
     print("************** COMIENZO DE JUEGO **************")
     print("***********************************************\n")
-    
-    
+    chinchon = {}
+    chinchon['chinchon'] = [False,''] # BANDERA chinchon. Si hay chinchon valor quedaría [True, nombre_jugador]
     # COMIENZO DE RONDAS
-    while sum(1 for jugador in jugadores if jugadores[jugador][4]) > 1: # Repite ciclo de Rondas hasta que quede 1 jugador
+    while sum(1 for jugador in jugadores if jugadores[jugador][4]) > 1 and not chinchon['chinchon'][0]: # Repite ciclo de Rondas hasta que quede 1 jugador o se haga chinchon
         
         print("\n************** COMIENZO DE RONDA **************\n")
         mostrar_cartas(jugadores)
@@ -220,7 +223,9 @@ def comienzo_juego(
                 mostrar_encabezado_turno(jugador)
                 
                 # ANALIZAR CARTAS
-                analizar(jugador = jugadores[jugador])
+                if analizar(jugador = jugadores[jugador]): # SI HAY CHINCHON
+                    chinchon['chinchon'] = [True, jugador]
+                    
                 
                 datos_jugador = jugadores[jugador]
                 mostrar_cartas_mano(jugador, datos_jugador)
@@ -240,7 +245,8 @@ def comienzo_juego(
                 recibir_carta(datos_jugador, carta)
                 
                 # ANALIZAR CARTAS
-                analizar(jugador = datos_jugador)
+                if analizar(jugador = datos_jugador): # SI HAY CHINCHON
+                    chinchon['chinchon'] = [True, jugador]
                 
                 # Mostrar cartas en mano
                 mostrar_cartas_mano(jugador, datos_jugador)
@@ -271,14 +277,16 @@ def comienzo_juego(
                 
         # Chequear Si alguien gano el juego
         jugadores_ok = contar_jugadores_ok(jugadores)
-        if len(jugadores_ok) == 1:
+        if len(jugadores_ok) == 1: # HAY GANADOR por descarte
             # Hay Ganador
             print(f"\n************** El ganador es: {jugadores_ok} **************\n")
             
             break
-        
-        # Quitar Juggadores que perdieron
-        # quitar_jugadores(jugadores)
+        elif chinchon["chinchon"][0]:
+            print(f"\n************** El ganador es: {chinchon["chinchon"][1]} **************\n")
+            print("HA FORMADO CHINCHON!!!!!!!!!!!!!!!!")
+            break
+                        
         
         # Pregunta si quiere seguir con la siguiente ronda
         seguir = input("Para seguir con la siguiente ronda pulsar enter(ingresa x para salir): ")

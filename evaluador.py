@@ -55,6 +55,7 @@ def hay_escalera(palos: dict[str,list[int]]) -> tuple[bool, dict[str, list[list[
     - tambien devuelve False si son menos de 3 tuplas, si son mas de 7 tuplas o si la lista está vacía
 
     '''"""
+    chinchon = False
     es_escalera = False
     escaleras: dict[str,list[list[int]]] = {} # Registra todas las escaleras que haya. Clave: palo, valor: lista de numeros que forman escalera
     
@@ -80,12 +81,15 @@ def hay_escalera(palos: dict[str,list[int]]) -> tuple[bool, dict[str, list[list[
         
         if len(temp) >= 3:
             secuencias.append(temp)
+        
+        if len(temp) == 7:
+            chinchon = True
             
         if secuencias:
             escaleras[palo] = secuencias
             es_escalera = True
             
-    return es_escalera, escaleras # El diccionario escaleras contiene las cartas de todas las escaleras que hay en lista
+    return es_escalera, escaleras, chinchon # El diccionario escaleras contiene las cartas de todas las escaleras que hay en lista
 
 
 # ---------------------
@@ -138,7 +142,7 @@ def analizar(jugador: list[list[tuple[int,str]], list[tuple[int,str]], list[tupl
             
     
     # ANALIZAR ESCALERAS con palos
-    escalera, cartas_escalera = hay_escalera(palos)
+    escalera, cartas_escalera, chinchon = hay_escalera(palos)
     
     if escalera:
         # Sacando Cartas escaleras de cartas libres
@@ -150,12 +154,9 @@ def analizar(jugador: list[list[tuple[int,str]], list[tuple[int,str]], list[tupl
             for lista in secuencias:
                 juego = []
                 
+                # Recorre la lista
                 for numero in lista:
                     
-                    # Eliminando el 1 si es del mismo palo que anterior
-                    # if palo[-1:] == "1":
-                    #     palo = palo[:-1]
-                        
                     carta = (numero, palo)
 
                     # Saca de libres la carta que forma escalera
@@ -172,7 +173,7 @@ def analizar(jugador: list[list[tuple[int,str]], list[tuple[int,str]], list[tupl
             
     jugador[2] = libres.copy()
     
-    return jugador
+    return chinchon
 
 # ---------------------
 # analizar_cortar() -> bool, carta

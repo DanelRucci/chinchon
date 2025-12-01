@@ -30,8 +30,12 @@ jugadores, mazo, descarte = inicializar(cant)
 # jugadores["Jugador_1"] = [[(7, 'basto'), (1, 'copa'), (2, 'copa'), (8, 'basto'), (9, 'basto'), (3, 'copa'), (11, 'espada')], [], [(7, 'basto'), (1, 'copa'), (2, 'copa'), (8, 'basto'), (9, 'basto'), (3, 'copa'), (11, 'espada')], 0, True]
 
 # 2 escalera de basto(1,2,3) y (7,8,9). Libre 11 de espadas
-jugadores["Jugador_1"] = [[(1, 'basto'), (2, 'basto'), (3, 'basto'), (4, 'basto'), (7, 'basto'),  (8, 'basto'), (9, 'basto')], [], [], 0, True]
-jugadores["Jugador_2"][3] = 95
+#jugadores["Jugador_1"] = [[(1, 'basto'), (2, 'basto'), (3, 'basto'), (4, 'basto'), (7, 'basto'),  (8, 'basto'), (9, 'basto')], [], [], 0, True]
+#jugadores["Jugador_2"][3] = 95
+
+# CHINCHON
+jugadores["Jugador_1"] = [[(1, 'basto'), (2, 'basto'), (3, 'basto'), (4, 'basto'), (5, 'basto'),  (6, 'basto'), (7, 'basto')], [], [], 0, True]
+
 
 # ANALIZAR CARTAS
 # jugadores["Jugador_1"] = analizar(jugador = jugadores["Jugador_1"])
