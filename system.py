@@ -1,311 +1,219 @@
-'''
-Modulo System
-'''
-
-# Importaciones
+from typing import Dict, List, Tuple, Union, Any
 import os
-
-from deck import *
-from players import *
-from evaluador import *
-
-def borrar_pantalla():
+from deck import * # se asume que exporta: crear_mazo, mezclar_mazo, iniciar_descarte, robar_carta_mazo, rearmar_mazo_del_descarte, ...
+from players import * # se asume que exporta: mostrar_cartas, mostrar_cartas_mano, reiniciar_jugadores, ...
+from evaluador import * # se asume que exporta: contar_puntos, analizar, levantar_carta, recibir_carta, analizar_cortar, descartar, proceso_descartar
+Card = Tuple[int, str]
+PlayerData = List[Any]  # [mano, ?, libres, puntos, condicion]
+PlayerKey = Union[str, int]
+PlayersDict = Dict[PlayerKey, PlayerData]
+class System:
     """
-    Borra la consola detectando el sistema operativo.
+    Clase que agrupa las funciones del modulo.
     """
-    # Windows usa el comando 'cls'
-    if os.name == 'nt':
-        os.system('cls')
-    # Linux y macOS (y otros sistemas basados en Unix) usan 'clear'
-    else:
-        os.system('clear')
+    def __init__(self) -> None:
+        pass
+    def borrar_pantalla(self) -> None:
+        """Borra la consola detectando el sistema operativo."""
+        if os.name == 'nt':
+            os.system('cls')
+        else:
+            os.system('clear')
 
-# ---------------------
-# repartir_cartas()
-# ---------------------
-def repartir_cartas(
-    jugadores: dict[str,list[list[tuple[int,str]],int,bool]], 
-    mazo:list[tuple[int,str]],
-    descarte: list[tuple[int,str]]
-    ):
-    ''' 
-    Reparte 7 cartas del mazo a cada participante, dando una carta a cada uno
-    hasta llegar a las 7 por cada jugador.
-    Entra: jugadores, mazo, descarte
-    Sale:
-    Nota entra descarte ya que si mazo se queda sin cartas acude a el
-    '''
-    # Itera jugadores
-    for cant in range(7):
-        for jugador in jugadores:
-            if len(mazo) == 0: 
-                # Si el Mazo se queda sin cartas generar otro del descarte
-                print(
-                    "*" * 20 +
-                    "\n El mazo quedó sin cartas\n Mezclando y generando mazo del descarte\n" +
-                    "*" * 20 
-                    ) 
-                rearmar_mazo_del_descarte(mazo, descarte)
-            
-            # Robar carta del mazo
-            carta = robar_carta_mazo(mazo)
-            
-            # Jugador recibe la carta
-            # Se agrega a la mano
-            jugadores[jugador][0].append(carta)
-        
-            # Se agrega a libres
-            jugadores[jugador][2].append(carta)
+    def mostrar_encabezado_turno(self, jugador: PlayerKey) -> None:
+        """Muestra encabezado del turno con nombre del jugador"""
+        print()
+        print('*' * 41)
+        print(f'       SIGUIENTE TURNO - {jugador}')
+        print('*' * 41)
 
-# ---------------------
-# mostrar Encabezado
-# ---------------------
-def mostrar_encabezado_turno(jugador):
-    '''
-    Funcion que muestra encabezado del turno con numbre del jugador
-    '''
-    print()
-    print('*' * 41)
-    print(f'       SIGUIENTE TURNO - {jugador}')
-    print('*' * 41)
+    # ---------------------
+    # Reparto y mazo
+    # ---------------------
+    def repartir_cartas(self, jugadores: PlayersDict, mazo: List[Card], descarte: List[Card]) -> None:
+        """
+        Reparte 7 cartas del mazo a cada participante, una a la vez por ronda.
+        Si el mazo se queda sin cartas, reconstruye desde el descarte.
+        """
+        for _round in range(7):
+            # iterar sobre pares clave/valor evita accesos repetidos al diccionario
+            for nombre, datos in jugadores.items():
+                if len(mazo) == 0:
+                    print(
+                        "*" * 20
+                        + "\n El mazo quedó sin cartas\n Mezclando y generando mazo del descarte\n"
+                        + "*" * 20
+                    )
+                    rearmar_mazo_del_descarte(mazo, descarte)
 
-# ---------------------
-# chequear_puntos()
-# ---------------------
-def chequear_puntos(nombre, datos_jugador):
-    '''
-    Funcion que chequea si el jugador se paso del limite de puntos para seguir jugando. Si asi fuera cambia la condicion del jugador (jugador[4]) a False
-    Entra: nombre del jugador, datos del jugador
-    '''
-    if datos_jugador[3] > 100:
+                carta = robar_carta_mazo(mazo)
+                # datos[0] = mano, datos[2] = libres (según uso original)
+                datos[0].append(carta)
+                datos[2].append(carta)
 
-        # Marcar la condicion del jugador como False para darlo de baja
-        datos_jugador[4] = False
+    def barajar_y_dar(self, jugadores: PlayersDict) -> Tuple[List[Card], List[Card]]:
+        """
+        Crea un mazo, lo mezcla, reparte cartas a jugadores y devuelve (mazo, descarte).
+        Mantiene la semántica original.
+        """
+        mazo: List[Card] = crear_mazo()
+        print("- Mazo Iniciado!!!")
 
-        print(f"\n********** ATENCION **********\nEl jugador {nombre} quedo ELIMINADO!!!!!")
-        
-# ---------------------
-# mostrar_tabla_puntos(jugadores)
-# ---------------------
-def mostrar_tabla_puntos(jugadores):
-    '''
-    Muestra informacion de la tabla de puntos
-    '''
-    print()
-    print('*' * 41)
-    print(f'************ TABLA DE PUNTOS ************')
-    
-    for jugador in jugadores:
-        print(f". {jugador}      {jugadores[jugador][3]} puntos - condicion en el juego: {jugadores[jugador][4]}")
-        
-# ---------------------
-# contar_jugadores_ok(jugadores)
-# ---------------------        
-def contar_jugadores_ok(jugadores) -> list[str]:
-    '''
-    Devuelve lista de jugadores que pueden seguir jugando por su condicion True(puntos < 101)
-    Entra: jugadores
-    '''
-    jugadores_ok = []
-    for jugador in jugadores:
-        if jugadores[jugador][4]:
-            jugadores_ok.append(jugador)
-    return jugadores_ok
-    
+        mezclar_mazo(mazo)
+        print("- Mazo mezclado!!!")
 
-     
-# ---------------------
-# cortar()
-# ---------------------
-def cortar(nombre, jugadores) -> int:
-    '''
-    Funcion que inicia proceso de corte
-        . suma puntos de cada jugador
-        . chequea puntos de cada jugador para marcar la condicion del mismo (sigue participando: True o Perdió: False)
-        . devuelve la cantidad de jugadores True
-    Entra: nombre del jugador que corta y jugadores(dict)
-    Sale: devuelve la cantidad de jugadores True
-    '''
-    print(f"\n***** Iniciando Proceso de Corte de {nombre} *****\n")
-    
-    # Contar puntos de cada uno y cargarlo en sus puntajes
-    for jugador in jugadores:
+        # Repartir cartas
+        self.repartir_cartas(jugadores, mazo, descarte=[])
+        # Iniciar pila de descarte
+        descarte: List[Card] = iniciar_descarte(mazo)
 
-        # Sumar puntos
-        jugadores[jugador][3] += contar_puntos(jugadores[jugador][2])
-        
-        # Chequear puntos
-        chequear_puntos(jugador, jugadores[jugador])
-        
-    # Mostrar Tabla de pntos
-    mostrar_tabla_puntos(jugadores)
-    
+        return mazo, descarte
 
+    # ---------------------
+    # Puntuación y corte
+    # ---------------------
+    def chequear_puntos(self, nombre: PlayerKey, datos_jugador: PlayerData) -> None:
+        """
+        Si el jugador supera 100 puntos, marca su condicion como False y avisa.
+        datos_jugador: lista con la estructura original (índice 3 -> puntos, índice 4 -> condicion)
+        """
+        if datos_jugador[3] > 100:
+            datos_jugador[4] = False
+            print(f"\n********** ATENCION **********\nEl jugador {nombre} quedo ELIMINADO!!!!!")
 
-            
-     
-# ---------------------
-# barajar_y_dar() -> mazo,
-# ---------------------
-def barajar_y_dar(jugadores) -> tuple[
-    dict[int,list[str, int, bool]],
-    list[tuple[int,str]], 
-    list[tuple[int,str]] 
-    ]:
-    '''
-    Funcion que:
-        . Crea un mazo
-        . Mezcla
-        . Reparte cartas a jugadores
-        . inicia descarte
-        
-     Devuelve una tupla con datos
-    - el mazo (lista de tuplas)
-    - la pila de descarte
-    '''
-    
-    # Crea Mazo
-    mazo = crear_mazo()
-    print("- Mazo Iniciado!!!")
-    
-    # Mezclar Mazo
-    mezclar_mazo(mazo)
-    print("- Mazo mezclado!!!")
-    
-    # Repartir cartas (LO HACE system.repartir_cartas())
-    repartir_cartas(jugadores,mazo, descarte=[])
-    
-    # Iniciar descarte
-    descarte = iniciar_descarte(mazo)
-    
-    return [mazo,descarte]
+    def mostrar_tabla_puntos(self, jugadores: PlayersDict) -> None:
+        """Muestra la tabla de puntos de todos los jugadores (puntos y condicion)."""
+        print()
+        print('*' * 41)
+        print(f'************ TABLA DE PUNTOS ************')
+        for nombre, datos in jugadores.items():
+            print(f". {nombre}      {datos[3]} puntos - condicion en el juego: {datos[4]}")
 
+    def contar_jugadores_ok(self, jugadores: PlayersDict) -> List[PlayerKey]:
+        """
+        Devuelve la lista de jugadores que siguen en el juego (condicion True).
+        """
+        return [nombre for nombre, datos in jugadores.items() if datos[4]]
 
-# ---------------------
-# comienzo_juego () COMIENZO DE PARTIDA!!!!
-# ---------------------
-def comienzo_juego(
-    jugadores: dict[int,list[str, int, bool]],
-    mazo: list[tuple[int,str]], 
-    descarte: list[tuple[int,str]] 
-    ):
-    
-    '''
-    Funcion que comienza el Juego Chinchon
-    Ingresan: 
-        -jugadores, 
-        -mazo, 
-        -descarte
-    
-    '''
-    
-    print("\n***********************************************")
-    print("************** COMIENZO DE JUEGO **************")
-    print("***********************************************\n")
-    chinchon = {}
-    chinchon['chinchon'] = [False,''] # BANDERA chinchon. Si hay chinchon valor quedaría [True, nombre_jugador]
-    # COMIENZO DE RONDAS
-    while sum(1 for jugador in jugadores if jugadores[jugador][4]) > 1 and not chinchon['chinchon'][0]: # Repite ciclo de Rondas hasta que quede 1 jugador o se haga chinchon
-        
-        print("\n************** COMIENZO DE RONDA **************\n")
-        mostrar_cartas(jugadores)
-        
-        print("\nCarta visible en pila de descarte: ",descarte[-1])
-        print("Cantidad de cartas en descarte: ", len(descarte))
-        
-        print("Cantidad de cartas en el mazo: ", len(mazo))
-    
-        # COMIENZO DE TURNOS
-        corte = False
-        while not corte:
-            for jugador in jugadores:
-                # Encabezado
-                mostrar_encabezado_turno(jugador)
-                
-                # ANALIZAR CARTAS
-                if analizar(jugador = jugadores[jugador]): # SI HAY CHINCHON
-                    chinchon['chinchon'] = [True, jugador]
-                    
-                
-                datos_jugador = jugadores[jugador]
-                mostrar_cartas_mano(jugador, datos_jugador)
-                
-                # Levantar carta
-                while True:
-                    carta = levantar_carta(mazo, descarte)
-                    # Chequear carta
-                    if carta == None:
-                        rearmar_mazo_del_descarte(mazo, descarte)
-                        continue
-                    
-                    # Tengo carta levantada
-                    print(f"\n  .Carta levantada: {carta}\n")
-                    break  
-                
-                recibir_carta(datos_jugador, carta)
-                
-                # ANALIZAR CARTAS
-                if analizar(jugador = datos_jugador): # SI HAY CHINCHON
-                    chinchon['chinchon'] = [True, jugador]
-                
-                # Mostrar cartas en mano
-                mostrar_cartas_mano(jugador, datos_jugador)
-                
-                # Se puede cortar ???
-                puede_cortar, carta_corte = analizar_cortar(datos_jugador[2])
-                if puede_cortar:
-                    
-                    # PUEDE CORTAR
-                    print(f"\n¡¡¡¡¡¡ {jugador} ya puede cortar !!!!!\n")
-                    desicion =  input(f"Quiere cortar(1) o seguir jugando(enter): ")
-                    
-                    if desicion == "1":
-                        
-                        # Terminar proceso de DESCARTE con la CARTA_CORTE
-                        descartar(carta_corte, descarte, jugador, jugadores)
-                        
-                        # Iniciar Proceso de Corte      
-                        corte = True                  
-                        # cortar(jugador, jugadores)
+    def cortar(self, nombre: PlayerKey, jugadores: PlayersDict) -> int:
+        """
+        Inicia proceso de corte:
+          - suma puntos de cada jugador (con contar_puntos sobre sus libres)
+          - chequea puntos y marca condicion
+          - muestra la tabla de puntos
+        Devuelve la cantidad de jugadores aún en juego (True).
+        """
+        print(f"\n***** Iniciando Proceso de Corte de {nombre} *****\n")
+
+        # Iterar sobre jugadores y actualizar puntos
+        for jugador_nombre, datos in jugadores.items():
+            puntos_sumados = contar_puntos(datos[2])
+            datos[3] += puntos_sumados
+            self.chequear_puntos(jugador_nombre, datos)
+
+        # Mostrar tabla actualizada
+        self.mostrar_tabla_puntos(jugadores)
+
+        # devolver cantidad de jugadores activos
+        jugadores_ok = self.contar_jugadores_ok(jugadores)
+        return len(jugadores_ok)
+
+    # ---------------------
+    # Flujo de juego principal
+    # ---------------------
+    def comienzo_juego(self, jugadores: PlayersDict, mazo: List[Card], descarte: List[Card]) -> None:
+        """
+        Comienzo del juego (bucle principal). Conserva la lógica original.
+        """
+        print("\n***********************************************")
+        print("************** COMIENZO DE JUEGO **************")
+        print("***********************************************\n")
+
+        chinchon: Dict[str, Union[bool, PlayerKey]] = {}
+        chinchon['chinchon'] = [False, '']  # bandera chinchon: [flag, nombre]
+
+        # Rondas hasta que quede 1 jugador o se haga chinchon
+        while sum(1 for jugador in jugadores if jugadores[jugador][4]) > 1 and not chinchon['chinchon'][0]:
+            print("\n************** COMIENZO DE RONDA **************\n")
+            mostrar_cartas(jugadores)
+
+            print("\nCarta visible en pila de descarte: ", descarte[-1] if descarte else None)
+            print("Cantidad de cartas en descarte: ", len(descarte))
+            print("Cantidad de cartas en el mazo: ", len(mazo))
+
+            # COMIENZO DE TURNOS
+            corte = False
+            while not corte:
+                for jugador in jugadores:
+                    # Encabezado
+                    self.mostrar_encabezado_turno(jugador)
+
+                    # ANALIZAR CARTAS (puede devolver True para chinchon)
+                    if analizar(jugador=jugadores[jugador]):
+                        chinchon['chinchon'] = [True, jugador]
+
+                    datos_jugador = jugadores[jugador]
+                    mostrar_cartas_mano(jugador, datos_jugador)
+
+                    # Levantar carta (si None -> reconstruir mazo desde descarte y reintentar)
+                    while True:
+                        carta = levantar_carta(mazo, descarte)
+                        if carta is None:
+                            rearmar_mazo_del_descarte(mazo, descarte)
+                            continue
+                        print(f"\n  .Carta levantada: {carta}\n")
                         break
-                
-                if not corte:
-                    proceso_descartar(jugador, jugadores, descarte)
 
-            if corte:
-                cortar(jugador, jugadores)
-                
-        # Chequear Si alguien gano el juego
-        jugadores_ok = contar_jugadores_ok(jugadores)
-        if len(jugadores_ok) == 1: # HAY GANADOR por descarte
-            # Hay Ganador
-            print(f"\n************** El ganador es: {jugadores_ok} **************\n")
-            
-            break
-        elif chinchon["chinchon"][0]:
-            print(f"\n************** El ganador es: {chinchon["chinchon"][1]} **************\n")
-            print("HA FORMADO CHINCHON!!!!!!!!!!!!!!!!")
-            break
-                        
-        
-        # Pregunta si quiere seguir con la siguiente ronda
-        seguir = input("Para seguir con la siguiente ronda pulsar enter(ingresa x para salir): ")
-        if seguir.upper() == 'X':
-            print("Elegiste salir del juego")
-            break
-        
-        borrar_pantalla()
-        
-        # PONER EN 0 LAS MANOS DE LOS JUGADORES HABILITADOS PARA SEGUIR Y BORRAR LOS INHABILITADOS
-        reiniciar_jugadores(jugadores)    
-        
-        # Volver a mezclar y dar cartas entre los JUGADORES HABILITADOS
-        mazo, descarte = barajar_y_dar(jugadores)
-                
-    # FIN DEL JUEGO
-    print("\n************** FIN DE JUEGO **************\n")
-          
-            
-                
-            
-        
+                    recibir_carta(datos_jugador, carta)
+
+                    # Analizar de nuevo por si se formó chinchon
+                    if analizar(jugador=datos_jugador):
+                        chinchon['chinchon'] = [True, jugador]
+
+                    # Mostrar cartas en mano
+                    mostrar_cartas_mano(jugador, datos_jugador)
+
+                    # ¿Se puede cortar?
+                    puede_cortar, carta_corte = analizar_cortar(datos_jugador[2])
+                    if puede_cortar:
+                        print(f"\n¡¡¡¡¡¡ {jugador} ya puede cortar !!!!!\n")
+                        desicion = input(f"Quiere cortar(1) o seguir jugando(enter): ")
+                        if desicion == "1":
+                            # Terminar proceso de DESCARTE con la CARTA_CORTE
+                            descartar(carta_corte, descarte, jugador, jugadores)
+                            corte = True
+                            break
+
+                    if not corte:
+                        proceso_descartar(jugador, jugadores, descarte)
+
+                if corte:
+                    # Ejecutar corte y actualizar puntuaciones
+                    self.cortar(jugador, jugadores)
+
+            # Chequear si hay ganador por quedar 1
+            jugadores_ok = self.contar_jugadores_ok(jugadores)
+            if len(jugadores_ok) == 1:
+                print(f"\n************** El ganador es: {jugadores_ok} **************\n")
+                break
+            elif chinchon["chinchon"][0]:
+                ganador = chinchon["chinchon"][1]
+                print(f"\n************** El ganador es: {ganador} **************\n")
+                print("HA FORMADO CHINCHON!!!!!!!!!!!!!!!!")
+                break
+
+            # Pregunta si quiere seguir con la siguiente ronda
+            seguir = input("Para seguir con la siguiente ronda pulsar enter(ingresa x para salir): ")
+            if seguir.upper() == 'X':
+                print("Elegiste salir del juego")
+                break
+
+            # Limpiar pantalla y reiniciar manos de jugadores activos
+            self.borrar_pantalla()
+            reiniciar_jugadores(jugadores)
+
+            # Volver a mezclar y dar cartas entre los jugadores habilitados
+            mazo, descarte = self.barajar_y_dar(jugadores)
+
+        # FIN DEL JUEGO
+        print("\n************** FIN DE JUEGO **************\n")
