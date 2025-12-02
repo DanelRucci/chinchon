@@ -1,205 +1,119 @@
-'''
-Modulo Evaluador
-'''
-
+from __future__ import annotations
+from typing import List, Tuple, Dict, Optional, Any
 from players import contar_puntos
-
-# ---------------------
-# reporte()
-# ---------------------
-def reporte(cartas: list[tuple[int,str]]) -> tuple[
-    dict[int,int],
-    dict[str,int]
-]:
-    '''
-    Funcion reporte() recibe de 3 a 7 tuplas(cartas) y devuelve 2 diccionarios
-    .- repeticiones: clave: numero, valor: cantidad de repeticiones
-    .- palos
-    '''
-    
-    if len(cartas) < 3 or len(cartas) > 8:
-        return None
-    
-    repeticiones = {}
-    palos = {}
-    
-    for carta in cartas:
-        # Evaluar REPETICIONES
-        numero = carta[0]
-        if numero in repeticiones:
-            repeticiones[numero] +=1
-        else:
-            repeticiones[numero] =1
-        
-        # Evaluar PALOS
-        palo = carta[1]
-        if palo in palos:
-            palos[palo].append(carta[0]) 
-        else:
-            palos[palo] = [carta[0]]
-    
-        
-    
-    return (repeticiones,palos)
-
-# ---------------------
-# hay_escalera()
-# ---------------------
-def hay_escalera(palos: dict[str,list[int]]) -> tuple[bool, dict[str, list[list[int]]]]:
-    """'''
-    Funcion que comprueba si hay escalera.
-    Recibe una lista de tuplas de entero, string
-    - las agrupa en el diccionario cartas_por_palo SEGUN PALO
-    - devuelve True si hay 3 o mas valores consecutivos de un mismo palo sino devuelve False
-    - si hubiera 2 escaleras del MISMO PALO devuelve una lista de listas (2 escaleras) en el mismo palo.
-    - tambien devuelve False si son menos de 3 tuplas, si son mas de 7 tuplas o si la lista está vacía
-
-    '''"""
-    chinchon = False
-    es_escalera = False
-    escaleras: dict[str,list[list[int]]] = {} # Registra todas las escaleras que haya. Clave: palo, valor: lista de numeros que forman escalera
-    
-    # Recorre las listas de numeros por palo
-    for palo, numeros in palos.items():
-        
-        # Inicia Busqueda en un palo
-        lista_de_numeros = sorted(numeros)
-        escalera_x_palo = 0
-        if len(lista_de_numeros) < 3:
-            continue
-        secuencias = []
-        temp = [lista_de_numeros[0]] # Acumula numeros consecutivos
-        for i in range(1, len(lista_de_numeros)):
-            
-            # El numero actual es consecutivo al anterior???
-            if lista_de_numeros[i] == lista_de_numeros[i - 1] + 1:
-                temp.append(lista_de_numeros[i]) # Sumarlo a lista temp
-            else:
-                if len(temp) >= 3:
-                    secuencias.append(temp)
-                temp = [lista_de_numeros[i]]
-        
-        if len(temp) >= 3:
-            secuencias.append(temp)
-        
-        if len(temp) == 7:
-            chinchon = True
-            
-        if secuencias:
-            escaleras[palo] = secuencias
-            es_escalera = True
-            
-    return es_escalera, escaleras, chinchon # El diccionario escaleras contiene las cartas de todas las escaleras que hay en lista
-
-
-# ---------------------
-# analizar()
-# ---------------------
-def analizar(jugador: list[list[tuple[int,str]], list[tuple[int,str]], list[tuple[int,str]],int,bool]):
-    '''
-    Funcion que envia  las cartas a reporte() para luego evaluar resultados
-    Entra: jugador[mano, posibles_juegos, cartas_libres, puntos_acumulados, sigue_jugando]
-            jugador se modifica en la funcion.
-    
-    '''
-
-    cartas = jugador[0].copy()
-    libres = jugador[0].copy()
-    
-    # Vaciar posibles juegos para volcar el analisis
-    jugador[1] = []
-
-    # Hacer reporte
-    repeticiones, palos = reporte(cartas)
-    
-    # ANALIZAR PIERNAS CON repeticiones
-    for repeticion in repeticiones:
-        
-        # Si el numero "repeticion" se repite 3 o mas veces Buscar las cartas y sumarlas a juego para luego sumarlas a juegos
-        if repeticiones[repeticion] >= 3:
-            # Recorrer mano y sumar todas las cartas de valor 3 a una juego
-            juego = []
-            
-            pierna = [carta for carta in jugador[0] if carta[0] == repeticion]
-            
-            for carta in pierna:
-                # if carta[0] == repeticion:
-                #     juego.append(carta)
-                # else:
-                #     jugador[2].append(carta) # Si no es la carta de la pierna la Agrega a cartas libres (jugador[2])
-                                    
-                # Agrega la carta a juego
-                juego.append(carta) 
-                
-                # Borra la carta de la pila de "libres" 
-                try:
-                    libres.remove(carta)
-                except ValueError:
-                    pass
-                
-            jugador[1].append(juego)
-
-            
-    
-    # ANALIZAR ESCALERAS con palos
-    escalera, cartas_escalera, chinchon = hay_escalera(palos)
-    
-    if escalera:
-        # Sacando Cartas escaleras de cartas libres
-        
-        # Recorre por palo
-        for palo, secuencias in cartas_escalera.items():
-            
-            # Recorre las listas de juegos en cada palo
-            for lista in secuencias:
-                juego = []
-                
-                # Recorre la lista
-                for numero in lista:
-                    
-                    carta = (numero, palo)
-
-                    # Saca de libres la carta que forma escalera
+Card = Tuple[int, str]
+class Evaluador:
+    """Evaluador de manos: reportes, escalera, analizar, analizar_cortar."""
+    @staticmethod
+    def reporte(cartas: List[Card]) -> Optional[Tuple[Dict[int, int], Dict[str, List[int]]]]:
+        """
+        Recibe entre 3 y 8 cartas y devuelve (repeticiones, palos)
+        repeticion: {numero: veces}
+        palos: {palo: [valores]}
+        """
+        if len(cartas) < 3 or len(cartas) > 8:
+            return None
+        repeticiones: Dict[int, int] = {}
+        palos: Dict[str, List[int]] = {}
+        for carta in cartas:
+            numero, palo = carta
+            repeticiones[numero] = repeticiones.get(numero, 0) + 1
+            palos.setdefault(palo, []).append(numero)
+        return repeticiones, palos
+    @staticmethod
+    def hay_escalera(palos: Dict[str, List[int]]) -> Tuple[bool, Dict[str, List[List[int]]], bool]:
+        """
+        Comprueba si hay escalera(s) por palo.
+        Devuelve (es_escalera, escaleras_por_palo, chinchon_flag)
+        """
+        chinchon = False
+        es_escalera = False
+        escaleras: Dict[str, List[List[int]]] = {}
+        for palo, numeros in palos.items():
+            lista_de_numeros = sorted(numeros)
+            if len(lista_de_numeros) < 3:
+                continue
+            secuencias: List[List[int]] = []
+            temp: List[int] = [lista_de_numeros[0]]
+            for i in range(1, len(lista_de_numeros)):
+                if lista_de_numeros[i] == lista_de_numeros[i - 1] + 1:
+                    temp.append(lista_de_numeros[i])
+                else:
+                    if len(temp) >= 3:
+                        secuencias.append(temp)
+                    temp = [lista_de_numeros[i]]
+            if len(temp) >= 3:
+                secuencias.append(temp)
+            if any(len(s) == 7 for s in secuencias):
+                chinchon = True
+            if secuencias:
+                escaleras[palo] = secuencias
+                es_escalera = True
+        return es_escalera, escaleras, chinchon
+    @staticmethod
+    def analizar(jugador: List[Any]) -> bool:
+        """
+        Analiza la mano del jugador (estructura original)
+        jugador: [mano, posibles_juegos, cartas_libres, puntos_acumulados, sigue_jugando]
+        Retorna True si hay chinchon (flag).
+        """
+        cartas = jugador[0].copy()
+        libres = jugador[0].copy()
+        jugador[1] = []
+        reporte = Evaluador.reporte(cartas)
+        if reporte is None:
+            jugador[2] = libres.copy()
+            return False
+        repeticiones, palos = reporte
+        # tripletas y cuartetos
+        for repeticion, veces in repeticiones.items():
+            if veces >= 3:
+                pierna = [c for c in jugador[0] if c[0] == repeticion]
+                juego: List[Card] = []
+                for carta in pierna:
+                    juego.append(carta)
                     try:
-                        libres.remove(carta) 
+                        libres.remove(carta)
                     except ValueError:
                         pass
-                    
-                    # Agregar carta al juego para luego sumarlo a posibles juegos
-                    juego.append(carta)
-                    
-                # Agregar Cartas escalera a posibles juegos (jugador[1])
                 jugador[1].append(juego)
-            
-    jugador[2] = libres.copy()
-    
-    return chinchon
-
-# ---------------------
-# analizar_cortar() -> bool, carta
-# ---------------------
-def analizar_cortar(libres: list[tuple[int,str]]) -> list[bool, tuple[int,str]]:
-    '''
-    Funcion que Analiza si puede cortar en funcion de las cartas libres en mano
-    Entra: cartas libres en mano
-    Sale: True o False y carta_corte
-    '''
-    print("\nAnalizando para cortar...") #!!!!!!!!!!
-    
-    # si ttodas las cartas forman juego
-    if len(libres) == 0:
-        return [True] #! ACA NO SE QUE CARTA DEVOLVER PORQUE NO HAY EN LIBRES
-    
-    # ordenar libres
-    libres_ordenadas = sorted(libres)
-    
-    # sacar la ultima carta(la mas alta que sería para cortar)
-    carta = libres_ordenadas.pop()
-    
-    puntos = contar_puntos(libres_ordenadas)
-    
-    return [True if puntos <= 7 else False, carta]
-
-    
-    
-    
+        # escaleras
+        escalera, cartas_escalera, chinchon = Evaluador.hay_escalera(palos)
+        if escalera:
+            for palo, secuencias in cartas_escalera.items():
+                for lista in secuencias:
+                    juego = []
+                    for numero in lista:
+                        carta = (numero, palo)
+                        try:
+                            libres.remove(carta)
+                        except ValueError:
+                            pass
+                        juego.append(carta)
+                    jugador[1].append(juego)
+            jugador[2] = libres.copy()
+        else:
+            jugador[2] = libres.copy()
+        return chinchon
+    @staticmethod
+    def analizar_cortar(libres: List[Card]) -> Tuple[bool, Optional[Card]]:
+        """
+        Determina si puede cortar: si no quedan libres => puede cortar (pero no hay carta para devolver).
+        Si quedan libres, calcula puntos y devuelve True/False y la carta candidata a cortes (la mayor).
+        """
+        print("\nAnalizando para cortar...")
+        if len(libres) == 0:
+            return True, None
+        libres_ordenadas = sorted(libres)
+        carta = libres_ordenadas.pop()
+        puntos = contar_puntos(libres_ordenadas)
+        return (True if puntos <= 7 else False), carta
+# los wrappers
+def reporte(cartas: List[Card]):
+    return Evaluador.reporte(cartas)
+def hay_escalera(palos: Dict[str, List[int]]):
+    return Evaluador.hay_escalera(palos)
+def analizar(jugador: List[Any]):
+    return Evaluador.analizar(jugador)
+def analizar_cortar(libres: List[Card]):
+    return Evaluador.analizar_cortar(libres)
